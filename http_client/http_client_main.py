@@ -3,6 +3,8 @@ import signal
 import sys
 import time
 
+date_time_format = '%Y-%m-%d %H:%M:%S'
+
 
 def exit_handler(sys_signal, frame):
     print(' - http_client_main::exit_handler')
@@ -22,8 +24,13 @@ if __name__ == '__main__':
     while True:
         url = 'http://192.168.0.89:80'
         headers = {'content-type': 'application/json'}
-        response = requests.get(url, headers=headers)
-        print(str(' - Response STATUS CODE: {}, TEXT: {}'.format(response.status_code, response.text)))
+        try:
+            response = requests.get(url, headers=headers)
+            print(str('{} - Response STATUS CODE: {}, TEXT: {}'.format(time.strftime(date_time_format),
+                                                                       response.status_code, response.text)))
+        except requests.ConnectionError as e:
+            print(' - ConnectionError: {}'.format(e))
+
         time.sleep(delay)
 
     print(' - end main')
