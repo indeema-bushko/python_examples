@@ -40,11 +40,12 @@ def value_from_string(value, tag_type):
     :param type_name:
     :return:
     """
-    if 'INT' == tag_type or 'SINT' == tag_type or 'DINT' == tag_type or 'USINT' == tag_type:
+    if client.enip.INT.tag_type == tag_type or client.enip.SINT.tag_type == tag_type \
+            or client.enip.DINT.tag_type == tag_type or client.enip.USINT.tag_type == tag_type:
         return int(value)
-    elif 'BOOL' == tag_type:
+    elif client.enip.DINT.tag_type == tag_type:
         return bool(value)
-    elif 'DWORD' == tag_type or 'REAL' == tag_type:
+    elif client.enip.DWORD.tag_type == tag_type or client.enip.REAL.tag_type == tag_type:
         return float(value)
 
 
@@ -90,7 +91,6 @@ if __name__ == '__main__':
     _port = 44818
     _tag_name = None
     _tag_value = None
-    _tag_type_name = None
     _tag_type = None
     _timeout = 5.0
 
@@ -106,13 +106,13 @@ if __name__ == '__main__':
         elif 'tag_type_name' in sys.argv[i]:
             _tag_type = tag_type_from_string(str(sys.argv[i]).replace('tag_type_name=', ''))
         elif 'tag_value' in sys.argv[i]:
-            value = str(sys.argv[i]).replace('tag_value=', '')
-
-    value = value_from_string(value=_tag_value, tag_type=_tag_type)
+            _tag_value = str(sys.argv[i]).replace('tag_value=', '')
 
     if not _tag_type or not _tag_name or not _tag_value:
         print_help()
         sys.exit(1)
+
+    value = value_from_string(value=_tag_value, tag_type=_tag_type)
 
     write_tag_value(host=_host, tag_name=_tag_name, type=_tag_type, tag_value=value)
 
