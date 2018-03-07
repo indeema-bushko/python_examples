@@ -18,23 +18,37 @@ def tag_type_from_string(type_name):
     :param type_name: BOOL, USINT, SINT, UINT, INT, WORD, UDINT, DWORD, DINT, REAL...
     :return: an integer value
     """
-    if 'INT' in type_name:
+    if 'INT' == type_name:
         return client.enip.INT.tag_type
-    elif 'SINT' in type_name:
+    elif 'SINT' == type_name:
         return client.enip.SINT.tag_type
-    elif 'DINT' in type_name:
+    elif type_name == 'DINT':
         return client.enip.DINT.tag_type
-    elif 'BOOL' in type_name:
+    elif 'BOOL' == type_name:
         return client.enip.BOOL.tag_type
-    elif 'USINT' in type_name:
+    elif 'USINT' == type_name:
         return client.enip.USINT.tag_type
-    elif 'DWORD' in type_name:
+    elif 'DWORD' == type_name:
         return client.enip.DWORD.tag_type
-    elif 'REAL' in type_name:
+    elif 'REAL' == type_name:
         return client.enip.REAL.tag_type
 
 
-def write_tag_value(host, tag_name, tag_type, tag_value, timeout=10.0):
+def value_from_string(value, tag_type):
+    """
+    Convert command line argument in to real value depend on CIP type
+    :param type_name:
+    :return:
+    """
+    if 'INT' == tag_type or 'SINT' == tag_type or 'DINT' == tag_type or 'USINT' == tag_type:
+        return int(value)
+    elif 'BOOL' == tag_type:
+        return bool(value)
+    elif 'DWORD' == tag_type or 'REAL' == tag_type:
+        return float(value)
+
+
+def write_tag_value(host, tag_name, type, tag_value, timeout=10.0):
     """
     Write Tag
     :param host: Device host address
@@ -45,10 +59,11 @@ def write_tag_value(host, tag_name, tag_type, tag_value, timeout=10.0):
     :return: True is successfully otherwise False
     """
     print(' - write_tag::write_tag_value: host: {}, tag_name: {}, tag_type: {}, tag_value: {}, timeout: {}'
-          .format(host, tag_name, tag_type, tag_value, timeout))
+          .format(host, tag_name, type, tag_value, timeout))
     try:
         with client.connector(host=host, timeout=timeout) as conn:
-            request = conn.write(tag_name, elements=len(tag_value), data=tag_value, tag_type=tag_type)
+            data = [tag_value]
+            request = conn.write(tag_name, elements=len(data), data=data, tag_type=type)
             reply, ela = client.await(conn, timeout=timeout)
             print(' - reply: {}'.format(reply))
     except AssertionError:
@@ -66,7 +81,7 @@ def write_tag_value(host, tag_name, tag_type, tag_value, timeout=10.0):
 if __name__ == '__main__':
     """
     _host - PLC host address
-    _port - CIP protocol port, default is 44818
+    _port - CIP protocol port,tag default is 44818
     _tag_name - example "Test_DINT[0]"
     _tag_value - depend on tag type
     _tag_type_name - possible value - BOOL, USINT, SINT, UINT, INT, WORD, UDINT, DWORD, DINT, REAL...
@@ -89,16 +104,17 @@ if __name__ == '__main__':
         elif 'tag_name=' in sys.argv[i]:
             _tag_name = str(sys.argv[i]).replace('tag_name=', '')
         elif 'tag_type_name' in sys.argv[i]:
-            _tag_type = tag_type_from_string(str(sys.argv[i]))
+            _tag_type = tag_type_from_string(str(sys.argv[i]).replace('tag_type_name=', ''))
         elif 'tag_value' in sys.argv[i]:
-            value = str(sys.argv[i]).replace('tag_value=')
-            _tag_value = int(value)
+            value = str(sys.argv[i]).replace('tag_value=', '')
 
-    if not _tag_type or not _tag_type_name or not _tag_name:
+    value = value_from_string(value=_tag_value, tag_type=_tag_type)
+
+    if not _tag_type or not _tag_name or not _tag_value:
         print_help()
         sys.exit(1)
 
-    write_tag_value(host=_host, tag_name=_tag_name, tag_type=_tag_type, tag_value=_tag_value)
+    write_tag_value(host=_host, tag_name=_tag_name, type=_tag_type, tag_value=value)
 
     print(' - write_tag::main end')
 
