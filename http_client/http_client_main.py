@@ -30,7 +30,7 @@ if __name__ == '__main__':
         for i in range(1, len(sys.argv)):
             if 'host=' in sys.argv[i]:
                 host = sys.argv[i].replace('host=', '')
-            elif 'port=' in sys.argv[i].replace('port=', ''):
+            elif 'port=' in sys.argv[i]:
                 port = sys.argv[i].replace('port=', '')
             elif 'delay=' in sys.argv[i]:
                 delay = int(sys.argv[i].replace('delay=', ''))
@@ -59,3 +59,5 @@ if __name__ == '__main__':
         time.sleep(delay)
 
     print(' - end main')
+
+

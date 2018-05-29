@@ -3,6 +3,10 @@ import threading
 import time
 import sys
 import shlex
+import os
+import requests
+
+date_time_format = '%Y-%m-%d %H:%M:%S'
 
 delta_time = 10
 is_routed = False
@@ -17,10 +21,31 @@ def status():
         if elapsed_time_sec < 0:
             not_routed()
             global delta_time
-            time.sleep(delta_time / 2)
+            # time.sleep(delta_time / 2)
             elapsed_time_sec = delta_time
-        time.sleep(1)
+        # time.sleep(1)
         elapsed_time_sec -= 1
+        print(' - elapsed_time : {}'.format(elapsed_time_sec))
+
+
+def fill_buffer(process):
+    print(' -- fill --')
+    while True:
+        process.stdin.write('############################################'.encode('utf-8'))
+        # time.sleep(1)
+    # url = 'http://127.0.0.1:80'
+    # while True:
+    #     headers = {'content-type': 'application/json'}
+    #     try:
+    #         print(' - fill buffer')
+    #         response = requests.get(url, headers=headers)
+    #         # print(str('{} - Response STATUS CODE: {}, TEXT: {}'.format(time.strftime(date_time_format),
+    #         #                                                            response.status_code, response.text)))
+    #     except requests.ConnectionError as e:
+    #         # print(' - ConnectionError: {}'.format(e))
+    #         time.sleep(2)
+    #
+    #     # time.sleep(1)
 
 
 def not_routed():
@@ -33,20 +58,34 @@ def routed():
 
 def print_help():
     print(' - help: command line arguments for (tcpdump)')
-    print(' - (src=) source host address, default 127.0.0.1')
+    print(' - [dst=] destination host address, this param is required')
+    print(' - (src=) source host address, default is None')
     print(' - (port=) port number for listening, default 80')
-    print(' - (size=) dump size in bytes')
+    print(' - (size=) dump size in bytes default 128')
+
+
+def myrun(cmd):
+    """from http://blog.kagesenshi.org/2008/02/teeing-python-subprocesspopen-output.html
+    """
+    p = subprocess.Popen(cmd, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    stdout = []
+    while True:
+        line = p.stdout.readline()
+        stdout.append(line)
+        print(line)
+        if line == '' and p.poll() != None:
+            break
+    return ''.join(stdout)
 
 
 if __name__ == '__main__':
     print(' - tcp_sniffer::main')
-    print(' - argv: {}'.format(sys.argv))
 
     command = 'sudo tcpdump '
-    src = '127.0.0.1'
+    src = None
     dst = None
     port = '80'
-    size = '128'
+    size = 128
     elapsed_time_sec = delta_time
 
     if len(sys.argv) > 1:
@@ -72,46 +111,57 @@ if __name__ == '__main__':
                 sys.exit(0)
 
     if not dst:
-        raise ValueError('A [des] argument is not present')
+        raise ValueError(' - error: [des] argument is not present')
         print_help()
         sys.exit(0)
 
-    command = command + '-s {} -n dst host {} and port {}'.format(size, dst, port)
+    if not src:
+        command = command + '-n dst host {} and port {}'.format(dst, port)
+    else:
+        command = command + '-s {} -n src host {} and dst host {} and port {}'.format(size, src, dst, port)
+
     print(' - start command: {}'.format(command))
 
-    threading.Thread(target=status).start()
+    # threading.Thread(target=status).start()
 
+    # threading.Thread(target=fill_buffer()).start()
+
+    # command = 'sudo tcpdump -n port 80 -w dump'
+    # process = subprocess.Popen(shlex.split(command))
+
+    # process = subprocess.Popen(['tcpdump', '-v'], stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+
+    process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
+
+    # for line in iter(process.stdout.readline, b''):
+    #     print("{} >> {}".format(time.strftime(date_time_format), line.rstrip()))
+    #     process.stdout.flush()
+    #
+    # process.terminate()
+    # process.wait()
+
+    # while True:
+    #     output = process.communicate()
+    #     if output:
+    #         print('{} -- {}'.format(time.strftime(date_time_format), output))
+    #         elapsed_time_sec = delta_time
+    #         routed()
+
+    # sys.stdout = os.fdopen(sys.stdout.fileno(), 'w', 0)
+    # process.stdout.flush()
+
+    # threading.Thread(target=fill_buffer, args=(process,)).start()
     while True:
-        process = subprocess.Popen(shlex.split(command), stdout=subprocess.PIPE)
         output = process.stdout.readline()
-        if output == '' and process.poll() is not None:
-            break
-        if output:
-            out_str = output.strip()
-            print(out_str)
-            print(' - des {}'.format(dst))
-            # Do process of the output, Do process of the output, make comparison if src or dst host exist
-            if dst in str(out_str):
-                print(' - routed src: {}, dst: {}'.format(src, dst))
-                routed()
-                elapsed_time_sec = delta_time
-        time.sleep(delta_time / 2)
+        if dst in str(output):
+            print(' --------------------------------------------------------------- ')
+            print('{} -- {}'.format(time.strftime(date_time_format), output))
+            print(' --------------------------------------------------------------- ')
 
-        process.poll()
-        # while True:
-        #     output = process.stdout.readline()
-        #     if output == '' and process.poll() is not None:
-        #         break
-        #     if output:
-        #         out_str = output.strip()
-        #         print(out_str)
-        #         print(' - des {}'.format(dst))
-        #         # Do process of the output, Do process of the output, make comparison if src or dst host exist
-        #         if dst in str(out_str):
-        #             print(' - routed src: {}, dst: {}'.format(src, dst))
-        #             routed()
-        #             elapsed_time_sec = delta_time
-        #
-        #     process.poll()
 
-    time.sleep(1)
+    # while True:
+    #     print(' ------------- ------------------------------------------------------------------')
+    #     print(' ------------- ------------------------------------------------------------------')
+    #     print(' ------------- ------------------------------------------------------------------')
+    #     p = subprocess.check_call(shlex.split(command))
+
