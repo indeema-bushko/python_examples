@@ -3,3 +3,4 @@ redis
 pymodbus
 AWSIoTPythonSDK
 paho-mqtt
+kafka
